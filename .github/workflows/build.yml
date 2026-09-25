@@ -1,0 +1,61 @@
+name: Build guide
+
+# Builds the guide 20 minutes before each six-hourly catalogue sync in streamloom-backend (:07 at
+# 00/06/12/18 UTC), which ingests it. Building more often would only produce guides nobody reads.
+# Each run fetches only the sources that are due, and downloads only the ones that changed
+# (ETag / Last-Modified); when nothing is due it exits in seconds and deploys nothing.
+on:
+  schedule:
+    - cron: "47 5,11,17,23 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Re-fetch every source, ignoring due times and ETags
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: guide
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - run: npm test
+
+      - id: build
+        run: npm run build
+        env:
+          FORCE: ${{ inputs.force }}
+
+      - if: steps.build.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - if: steps.build.outputs.changed == 'true'
+        uses: actions/deploy-pages@v4
+
+      # GitHub disables the schedule of a public repository after 60 days without a commit.
+      # Re-enabling it through the API keeps it running without writing to the repository.
+      - name: Keep the schedule enabled
+        if: ${{ !cancelled() }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/build.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

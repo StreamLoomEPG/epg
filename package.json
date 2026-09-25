@@ -1,0 +1,13 @@
+{
+  "name": "streamloom-epg",
+  "private": true,
+  "type": "module",
+  "description": "Builds the Streamloom programme guide for the channels the catalogue publishes, from free XMLTV feeds.",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
