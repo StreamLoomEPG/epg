@@ -1,5 +1,5 @@
 /**
- * Writes `grab/channels.xml`: what the iptv-org/epg grabber fetches today. Only published channels
+ * Writes `grab/sites/<site>.channels.xml`: what the iptv-org/epg grabber fetches today. Only published channels
  * that no ready-made feed carries in the live guide, each once, on a site iptv-org marks working.
  */
 import zlib from 'node:zlib';
@@ -33,7 +33,11 @@ ok.delete('i.mjh.nz');
 const plan = grabPlan(guides, published, covered, ok);
 const bySite = {};
 for (const p of plan) bySite[p.site] = (bySite[p.site] || 0) + 1;
-mkdirSync('grab', { recursive: true });
-writeFileSync('grab/channels.xml', channelsXml(plan));
+// One channel list per site: grab.yml runs each in its own process, so a site that runs out of
+// memory or hangs costs only its own channels, not the whole grab.
+mkdirSync('grab/sites', { recursive: true });
+for (const site of Object.keys(bySite)) {
+    writeFileSync(`grab/sites/${site}.channels.xml`, channelsXml(plan.filter(p => p.site === site)));
+}
 console.log(`${plan.length} channels to grab from ${Object.keys(bySite).length} working sites:`,
     Object.entries(bySite).sort((a, b) => b[1] - a[1]).map(([s, n]) => `${s} ${n}`).join(', '));
