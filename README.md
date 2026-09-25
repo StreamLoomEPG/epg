@@ -22,6 +22,8 @@ previous output from Pages.
   reused.
 - **Changed, not re-downloaded.** A re-check is a conditional request (`If-None-Match` /
   `If-Modified-Since`), so an unchanged feed costs a 304.
+- **Once a day, everything.** Every 24 h each source is downloaded regardless of its ETag, so a
+  newly published channel in an unchanged feed is picked up within a day.
 - **Timed to the consumer.** The workflow runs 20 minutes before each six-hourly backend sync;
   a guide built between syncs would never be read.
 
@@ -35,14 +37,17 @@ the mapped feeds), so two feeds' timings never overlap.
 ## Output
 
 ```json
-{ "generated": "ISO time", "window": { "from": 0, "to": 0 },
-  "channels": { "<channel id>": { "source": "epgshare01/UK1", "hash": "…",
+{ "generated": "ISO time", "previous": "the build this one follows", "window": { "from": 0, "to": 0 },
+  "channels": { "<channel id>": { "source": "epgshare01/UK1", "hash": "…", "since": 0,
                                   "programmes": [[startMs, endMs, "title", "description"]] } } }
 ```
 
-Window: now −6 h to now +48 h. `hash` changes only when that channel's schedule does, so the
-backend stores only what changed. A build that would publish fewer than half the previous
-build's channels fails instead.
+Window: now −6 h to now +48 h.
+- `hash` changes only when a channel's schedule does. Programmes expiring off the back of the
+  window don't count.
+- `since` marks the first programme that differs from `previous`, so a backend that ingested
+  `previous` writes only from there.
+- A build whose share of published channels halves fails instead of publishing, unless forced.
 
 ## Run it
 

@@ -35,33 +35,39 @@ async function get(url, headers = {}) {
     return res;
 }
 
-/** Our previous output, or null the first time (Pages not deployed yet). */
+/**
+ * Our previous output, or null the first time (Pages not deployed yet: 404). Any other failure
+ * throws: building on a guide we could not read would drop every channel it held.
+ */
 async function previous(path, gz) {
-    try {
-        const res = await get(`${PAGES_URL}/${path}`);
-        const buf = Buffer.from(await res.arrayBuffer());
-        return JSON.parse((gz ? zlib.gunzipSync(buf) : buf).toString('utf8'));
-    } catch (err) {
-        console.log(`No previous ${path}: ${err.message}`);
-        return null;
-    }
+    const res = await fetch(`${PAGES_URL}/${path}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`HTTP ${res.status} reading our previous ${path}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    return JSON.parse((gz ? zlib.gunzipSync(buf) : buf).toString('utf8'));
 }
 
 function output(key, value) {
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
 }
 
+/** Once a day every source is downloaded regardless of ETag, to pick up newly published channels. */
+const FULL_EVERY_MS = 24 * 3600 * 1000;
+
 async function main() {
     const now = Date.now();
     const prevState = (await previous('state.json')) || { sources: {} };
+    const full = FORCE || !(prevState.fullAt > now - FULL_EVERY_MS);
     const states = Object.values(prevState.sources);
-    if (!FORCE && states.length > 0 && !states.some(s => isDue(s, now))) {
+    if (!full && !states.some(s => isDue(s, now))) {
         const next = Math.min(...states.map(s => s.checkAt));
         console.log(`Nothing due; next source is due ${new Date(next).toISOString()}.`);
         return output('changed', 'false');
     }
 
-    const prevGuide = (await previous('guide.json.gz', true)) || { channels: {} };
+    const prevGuide = await previous('guide.json.gz', true);
+    if (!prevGuide && states.length > 0) throw new Error('state.json exists but guide.json.gz does not; refusing to build on half a previous output.');
+    const prevChannels = prevGuide?.channels || {};
     const [ids, channels, guides] = await Promise.all(
         [ACTIVE_IDS_URL, CHANNELS_URL, GUIDES_URL].map(async url => (await get(url)).json()),
     );
@@ -84,28 +90,43 @@ async function main() {
     ];
 
     const win = window(now);
-    const reuse = name => new Map(Object.entries(prevGuide.channels)
+    // A reused schedule keeps its hash: only a re-parsed source can change what a channel holds, so
+    // programmes sliding out of the window's back edge never make the backend rewrite a channel.
+    const reuse = name => new Map(Object.entries(prevChannels)
         .filter(([, ch]) => ch.source === name)
-        .map(([id, ch]) => [id, ch.programmes.filter(p => p[1] >= win.from)])
-        .filter(([, list]) => list.length > 0));
+        .map(([id, ch]) => [id, { hash: ch.hash, programmes: ch.programmes.filter(p => p[1] >= win.from) }])
+        .filter(([, ch]) => ch.programmes.length > 0));
+    // A re-parsed channel whose schedule is the previous one minus what expired keeps its hash.
+    // One that changed carries `since`: the start of its first programme that differs from the
+    // previous build, so the backend writes only from there on (it falls back to the whole channel
+    // when it did not ingest that previous build, see `previous` below).
+    const parsed = got => new Map([...got].map(([id, programmes]) => {
+        const prev = prevChannels[id];
+        if (!prev) return [id, { hash: scheduleHash(programmes), programmes }];
+        const before = prev.programmes.filter(p => p[1] >= win.from);
+        let i = 0;
+        while (i < programmes.length && i < before.length && JSON.stringify(programmes[i]) === JSON.stringify(before[i])) i++;
+        if (i === programmes.length && i === before.length) return [id, { hash: prev.hash, programmes }];
+        return [id, { hash: scheduleHash(programmes), since: programmes[Math.min(i, programmes.length - 1)][0], programmes }];
+    }));
 
     const claimed = new Set();
     const guide = {};
-    const state = { sources: {} };
+    const state = { fullAt: full ? now : prevState.fullAt, sources: {} };
     let fetched = 0, unchanged = 0, failed = 0;
 
     for (const src of sources) {
         const prev = prevState.sources[src.name];
         let got;
         let next = prev;
-        if (!FORCE && !isDue(prev, now)) {
+        if (!full && !isDue(prev, now)) {
             got = reuse(src.name);
         } else {
             try {
                 const headers = {};
-                if (prev?.etag) headers['If-None-Match'] = prev.etag;
-                if (prev?.lastModified) headers['If-Modified-Since'] = prev.lastModified;
-                const res = await get(src.url, FORCE ? {} : headers);
+                if (!full && prev?.etag) headers['If-None-Match'] = prev.etag;
+                if (!full && prev?.lastModified) headers['If-Modified-Since'] = prev.lastModified;
+                const res = await get(src.url, headers);
                 if (res === null) {
                     unchanged += 1;
                     got = reuse(src.name);
@@ -113,10 +134,10 @@ async function main() {
                 } else {
                     fetched += 1;
                     const xml = zlib.gunzipSync(Buffer.from(await res.arrayBuffer())).toString('utf8');
-                    got = parseXmltv(xml, src.match, claimed, win);
+                    got = parsed(parseXmltv(xml, src.match, claimed, win));
                     next = { etag: res.headers.get('etag'), lastModified: res.headers.get('last-modified') };
                 }
-                next.checkAt = nextCheck(got, now);
+                next.checkAt = nextCheck(new Map([...got].map(([id, ch]) => [id, ch.programmes])), now);
             } catch (err) {
                 failed += 1;
                 console.log(`::warning::${src.name}: ${err.message}`);
@@ -124,10 +145,10 @@ async function main() {
             }
         }
         let kept = 0;
-        for (const [id, programmes] of got) {
+        for (const [id, ch] of got) {
             if (claimed.has(id) || !published.has(id)) continue;
             claimed.add(id);
-            guide[id] = { source: src.name, hash: scheduleHash(programmes), programmes };
+            guide[id] = { source: src.name, ...ch };
             kept += 1;
         }
         // A source that failed before it was ever fetched has no state, so it is due next run.
@@ -135,22 +156,24 @@ async function main() {
     }
 
     const count = Object.keys(guide).length;
-    const prevCount = Object.keys(prevGuide.channels).length;
-    console.log(`${sources.length} sources: ${fetched} downloaded, ${unchanged} unchanged (304), ${failed} failed.`);
-    console.log(`${count} of ${published.size} published channels have a guide (${(100 * count / published.size).toFixed(1)}%).`);
-    // A guide that suddenly lost half its channels is a broken upstream, not a real change.
-    if (prevCount > 0 && count < prevCount / 2) {
-        throw new Error(`Refusing to publish ${count} channels over the previous ${prevCount}.`);
+    state.share = count / published.size;
+    console.log(`${full ? 'Full refresh. ' : ''}${sources.length} sources: ${fetched} downloaded, ${unchanged} unchanged (304), ${failed} failed.`);
+    console.log(`${count} of ${published.size} published channels have a guide (${(100 * state.share).toFixed(1)}%).`);
+    // A guide whose share of the catalogue suddenly halved is a broken upstream, not a real change.
+    // A share, not a count, so a catalogue that really shrank does not lock this shut; FORCE skips it.
+    if (!FORCE && prevState.share > 0 && state.share < prevState.share / 2) {
+        throw new Error(`Refusing to publish ${(100 * state.share).toFixed(1)}% coverage over the previous ${(100 * prevState.share).toFixed(1)}%.`);
     }
 
-    const same = count === prevCount && Object.entries(guide).every(([id, ch]) => prevGuide.channels[id]?.hash === ch.hash);
+    const same = count === Object.keys(prevChannels).length
+        && Object.entries(guide).every(([id, ch]) => prevChannels[id]?.hash === ch.hash && prevChannels[id].programmes.length === ch.programmes.length);
     if (same && JSON.stringify(state) === JSON.stringify(prevState)) {
         console.log('Guide and state unchanged; nothing to deploy.');
         return output('changed', 'false');
     }
     mkdirSync('dist', { recursive: true });
     writeFileSync('dist/guide.json.gz', zlib.gzipSync(JSON.stringify({
-        generated: new Date(now).toISOString(), window: win, channels: guide,
+        generated: new Date(now).toISOString(), previous: prevGuide?.generated || null, window: win, channels: guide,
     }), { level: 9 }));
     writeFileSync('dist/state.json', JSON.stringify(state));
     output('changed', 'true');
