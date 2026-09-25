@@ -170,3 +170,17 @@ export function isDue(state, now = Date.now()) {
 export function scheduleHash(programmes) {
     return createHash('sha1').update(JSON.stringify(programmes)).digest('base64url').slice(0, 16);
 }
+
+/**
+ * Where a channel's schedule starts to differ from the previous build's, or null if it does not:
+ * the earlier of the two starts at the first differing position. The earlier one, because a
+ * programme removed from the middle shifts the rest down a place, and the change begins at the
+ * removed programme, not the one after it. The backend writes from here and retires what the
+ * old schedule held from here on.
+ */
+export function changedSince(before, after) {
+    let i = 0;
+    while (i < after.length && i < before.length && JSON.stringify(after[i]) === JSON.stringify(before[i])) i++;
+    if (i === after.length && i === before.length) return null;
+    return Math.min(after[i]?.[0] ?? Infinity, before[i]?.[0] ?? Infinity);
+}

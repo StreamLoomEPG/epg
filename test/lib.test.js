@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
     clean, feedCountry, createFeedMatcher, mappedFeeds, decodeXmlEntities, parseXmltvTime, parseXmltv,
-    nextCheck, isDue, scheduleHash, LOOKAHEAD_H, IDLE_RECHECK_H,
+    nextCheck, isDue, scheduleHash, changedSince, LOOKAHEAD_H, IDLE_RECHECK_H,
 } from '../lib.js';
 
 const H = 3600 * 1000;
@@ -88,4 +88,14 @@ test('a source is due when its earliest-ending channel comes within the lookahea
     assert.equal(isDue({ checkAt: now }, now), true);
     assert.equal(scheduleHash([[1, 2, 't', '']]), scheduleHash([[1, 2, 't', '']]));
     assert.notEqual(scheduleHash([[1, 2, 't', '']]), scheduleHash([[1, 3, 't', '']]));
+});
+
+test('changedSince: where the schedule starts to differ, including a removal from the middle', () => {
+    const a = [10, 11, 12].map(t => [t, t + 1, `p${t}`, '']);
+    assert.equal(changedSince(a, a), null, 'identical');
+    assert.equal(changedSince(a, [...a, [13, 14, 'p13', '']]), 13, 'grew at the end');
+    assert.equal(changedSince(a, [a[0], a[2]]), 11, 'middle removal: the removed programme\'s start, not the next one\'s');
+    assert.equal(changedSince(a, [a[0], [11, 12, 'renamed', ''], a[2]]), 11, 'a changed programme');
+    assert.equal(changedSince(a, [a[0], [11.5, 12, 'moved', ''], a[2]]), 11, 'moved later: from the old start');
+    assert.equal(changedSince(a, a.slice(0, 2)), 12, 'removed at the end');
 });

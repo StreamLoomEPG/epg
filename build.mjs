@@ -9,7 +9,7 @@ import zlib from 'node:zlib';
 import { mkdirSync, writeFileSync, appendFileSync } from 'node:fs';
 
 import {
-    window, feedCountry, createFeedMatcher, mappedFeeds, parseXmltv, nextCheck, isDue, scheduleHash,
+    window, feedCountry, createFeedMatcher, mappedFeeds, parseXmltv, nextCheck, isDue, scheduleHash, changedSince,
 } from './lib.js';
 
 const PAGES_URL = process.env.PAGES_URL || 'https://streamloomepg.github.io/epg';
@@ -103,11 +103,9 @@ async function main() {
     const parsed = got => new Map([...got].map(([id, programmes]) => {
         const prev = prevChannels[id];
         if (!prev) return [id, { hash: scheduleHash(programmes), programmes }];
-        const before = prev.programmes.filter(p => p[1] >= win.from);
-        let i = 0;
-        while (i < programmes.length && i < before.length && JSON.stringify(programmes[i]) === JSON.stringify(before[i])) i++;
-        if (i === programmes.length && i === before.length) return [id, { hash: prev.hash, programmes }];
-        return [id, { hash: scheduleHash(programmes), since: programmes[Math.min(i, programmes.length - 1)][0], programmes }];
+        const since = changedSince(prev.programmes.filter(p => p[1] >= win.from), programmes);
+        if (since === null) return [id, { hash: prev.hash, programmes }];
+        return [id, { hash: scheduleHash(programmes), since, programmes }];
     }));
 
     const claimed = new Set();
