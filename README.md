@@ -19,7 +19,8 @@ previous output from Pages.
   2. **i.mjh.nz** (Pluto, Plex, Roku, Samsung TV Plus, Foxtel…), picked and mapped **by exact id**
      through iptv-org's [`guides.json`](https://iptv-org.github.io/api/guides.json).
   3. **iptv-epg.org** country files (us, ua, in, ru, vn), used with the site owner's agreement.
-  4. **The iptv-org grabber** (`grab.yml`, daily). `plan-grab.mjs` asks it only for published
+  4. **epg.pw** (its RU file, the only one adding ≥15 of ours; `robots.txt` allows `/xmltv/`).
+  5. **The iptv-org grabber** (`grab.yml`, daily). `plan-grab.mjs` asks it only for published
      channels no feed above carries, once each, on a site iptv-org marks working. Its output is
      the `grab` release asset.
 - **Due, not scheduled.** A source is re-checked only when the earliest-ending of its channels'

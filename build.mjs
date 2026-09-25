@@ -85,7 +85,7 @@ async function main() {
     const all = channels.map(c => ({ id: c.id, name: c.name, country: c.country }));
 
     // In priority order: epgshare01, then the mapped feeds (Pluto, Plex, Roku, Samsung TV Plus,
-    // Foxtel...) by exact id, then iptv-epg.org, then what the grabber scraped (grab.yml) - each
+    // Foxtel...) by exact id, then iptv-epg.org, epg.pw, then what the grabber scraped (grab.yml) - each
     // fills only the channels the ones before it do not carry.
     const sources = [
         ...EPGSHARE.map(feed => ({
@@ -102,6 +102,13 @@ async function main() {
             url: `https://iptv-epg.org/files/epg-${cc}.xml.gz`,
             match: createFeedMatcher(all, published, { country: cc === 'gb' ? 'UK' : cc.toUpperCase() }),
         })),
+        {
+            // epg.pw: clean terms (`robots.txt` allows /xmltv/). Only its RU file adds >=15 of ours,
+            // mostly non-Russian channels a Russian IPTV service carries, under iptv-org ids.
+            name: 'epg.pw/RU',
+            url: 'https://epg.pw/xmltv/epg_RU.xml.gz',
+            match: createFeedMatcher(all, published, { country: 'RU' }),
+        },
         {
             name: 'grab',
             url: GRAB_URL,
