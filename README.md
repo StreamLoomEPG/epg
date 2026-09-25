@@ -5,6 +5,7 @@ feeds, and serves it from GitHub Pages:
 
 - `https://streamloomepg.github.io/epg/guide.json.gz`: the guide
 - `https://streamloomepg.github.io/epg/state.json`: per-source ETag and when it is next due
+- `https://github.com/StreamLoomEPG/epg/releases/download/grab/guide.xml.gz`: the grabber's daily output, one of the sources
 
 The backend (`Stream-Loom/streamloom-backend`) ingests the guide at the start of each catalogue
 sync. This repository holds **no credential**. It reads the published channel ids from the public
@@ -13,10 +14,14 @@ previous output from Pages.
 
 ## Only what is needed, only when it is needed
 
-- **Targeted.** Only feeds that carry a published channel are used. The i.mjh.nz feeds (Pluto,
-  Plex, Roku, Samsung TV Plus, Foxtel…) are picked, and their channels mapped **by exact id**,
-  through iptv-org's [`guides.json`](https://iptv-org.github.io/api/guides.json). The epgshare01
-  country feeds were chosen by a dry run of all 103 against the catalogue.
+- **Targeted.** Only feeds that carry a published channel are used, in priority order:
+  1. **epgshare01 country feeds**, chosen by a dry run of all 103 against the catalogue.
+  2. **i.mjh.nz** (Pluto, Plex, Roku, Samsung TV Plus, Foxtel…), picked and mapped **by exact id**
+     through iptv-org's [`guides.json`](https://iptv-org.github.io/api/guides.json).
+  3. **iptv-epg.org** country files (us, ua, in, ru, vn), used with the site owner's agreement.
+  4. **The iptv-org grabber** (`grab.yml`, daily). `plan-grab.mjs` asks it only for published
+     channels no feed above carries, once each, on a site iptv-org marks working. Its output is
+     the `grab` release asset.
 - **Due, not scheduled.** A source is re-checked only when the earliest-ending of its channels'
   guides comes within 12 hours (`LOOKAHEAD_H` in `lib.js`). Otherwise its last schedule is
   reused.

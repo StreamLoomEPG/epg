@@ -28,6 +28,15 @@ const EPGSHARE = [
     'CZ1', 'RO1', 'CH1', 'IN4', 'AE1', 'HU1', 'TR3', 'TH1', 'BR2', 'GR1', 'BE2', 'AL1', 'CO1', 'NL1', 'ID1', 'VN1', 'BG1',
 ];
 
+/**
+ * iptv-epg.org country files, used with the site owner's agreement (2026-09-25). Only those that
+ * add at least 15 published channels over the sources before them, by a dry run the same day.
+ */
+const IPTV_EPG = ['us', 'ua', 'in', 'ru', 'vn'];
+
+/** The grabber's daily output (grab.yml), a release asset of this repository. */
+const GRAB_URL = process.env.GRAB_URL || 'https://github.com/StreamLoomEPG/epg/releases/download/grab/guide.xml.gz';
+
 async function get(url, headers = {}) {
     const res = await fetch(url, { headers });
     if (res.status === 304) return null;
@@ -75,8 +84,9 @@ async function main() {
     if (published.size === 0) throw new Error('The catalogue publishes no channels; refusing to build a guide for none.');
     const all = channels.map(c => ({ id: c.id, name: c.name, country: c.country }));
 
-    // epgshare01 first: the mapped feeds (Pluto, Plex, Roku, Samsung TV Plus, Foxtel...) fill the
-    // channels it does not carry. Their channels are mapped by id, never by name.
+    // In priority order: epgshare01, then the mapped feeds (Pluto, Plex, Roku, Samsung TV Plus,
+    // Foxtel...) by exact id, then iptv-epg.org, then what the grabber scraped (grab.yml) - each
+    // fills only the channels the ones before it do not carry.
     const sources = [
         ...EPGSHARE.map(feed => ({
             name: `epgshare01/${feed}`,
@@ -87,6 +97,17 @@ async function main() {
             ...feed,
             match: rawId => feed.map.get(rawId) || null,
         })),
+        ...IPTV_EPG.map(cc => ({
+            name: `iptv-epg.org/${cc}`,
+            url: `https://iptv-epg.org/files/epg-${cc}.xml.gz`,
+            match: createFeedMatcher(all, published, { country: cc === 'gb' ? 'UK' : cc.toUpperCase() }),
+        })),
+        {
+            name: 'grab',
+            url: GRAB_URL,
+            // The grabber writes our ids as its channel ids (xmltv_id), so only an exact id counts.
+            match: rawId => (published.has(rawId) ? rawId : null),
+        },
     ];
 
     const win = window(now);

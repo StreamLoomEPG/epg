@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
     clean, feedCountry, createFeedMatcher, mappedFeeds, decodeXmlEntities, parseXmltvTime, parseXmltv,
-    nextCheck, isDue, scheduleHash, changedSince, LOOKAHEAD_H, IDLE_RECHECK_H,
+    nextCheck, isDue, scheduleHash, changedSince, workingSites, grabPlan, channelsXml, LOOKAHEAD_H, IDLE_RECHECK_H,
 } from '../lib.js';
 
 const H = 3600 * 1000;
@@ -98,4 +98,28 @@ test('changedSince: where the schedule starts to differ, including a removal fro
     assert.equal(changedSince(a, [a[0], [11, 12, 'renamed', ''], a[2]]), 11, 'a changed programme');
     assert.equal(changedSince(a, [a[0], [11.5, 12, 'moved', ''], a[2]]), 11, 'moved later: from the old start');
     assert.equal(changedSince(a, a.slice(0, 2)), 12, 'removed at the end');
+});
+
+test('workingSites keeps only the sites SITES.md marks green', () => {
+    const md = `<tr><td><a href="sites/a.com">a.com</a></td><td align="right">3</td><td align="center">🟢</td><td></td></tr>
+<tr><td><a href="sites/b.com">b.com</a></td><td align="right">3</td><td align="center">🔴</td><td>issue</td></tr>
+<tr><td><a href="sites/c.com">c.com</a></td><td align="right">3</td><td align="center">🟡</td><td></td></tr>`;
+    assert.deepEqual([...workingSites(md)], ['a.com']);
+});
+
+test('grabPlan: uncovered published channels only, working sites only, greediest site first, once each', () => {
+    const guides = [
+        { channel: 'A.us', site: 'big.com', site_id: '1', lang: 'en', site_name: 'A' },
+        { channel: 'B.us', site: 'big.com', site_id: '2', lang: 'en', site_name: 'B & Co' },
+        { channel: 'B.us', site: 'small.com', site_id: 'b', lang: 'en' },
+        { channel: 'C.us', site: 'small.com', site_id: 'c', lang: 'es' },
+        { channel: 'D.us', site: 'broken.com', site_id: 'd' },
+        { channel: 'E.us', site: 'big.com', site_id: '5' },
+        { channel: 'F.us', site: 'big.com', site_id: '6' },
+        { channel: null, site: 'big.com', site_id: '7' },
+    ];
+    const plan = grabPlan(guides, new Set(['A.us', 'B.us', 'C.us', 'D.us', 'E.us']), new Set(['E.us']), new Set(['big.com', 'small.com']));
+    assert.deepEqual(plan.map(p => `${p.xmltv_id}@${p.site}`), ['A.us@big.com', 'B.us@big.com', 'C.us@small.com'],
+        'E is covered, F unpublished, D only on a broken site; B taken once, from the site that covers more');
+    assert.match(channelsXml(plan), /<channel site="big.com" lang="en" xmltv_id="B.us" site_id="2">B &amp; Co<\/channel>/);
 });

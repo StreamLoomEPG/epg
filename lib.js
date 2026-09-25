@@ -184,3 +184,54 @@ export function changedSince(before, after) {
     if (i === after.length && i === before.length) return null;
     return Math.min(after[i]?.[0] ?? Infinity, before[i]?.[0] ?? Infinity);
 }
+
+/** The sites iptv-org/epg's SITES.md marks working (🟢); broken (🔴) and degraded (🟡) are skipped. */
+export function workingSites(sitesMd) {
+    const ok = new Set();
+    for (const m of sitesMd.matchAll(/<a href="sites\/([^"]+)">[^<]*<\/a><\/td><td[^>]*>[^<]*<\/td><td[^>]*>([^<]*)<\/td>/g)) {
+        if (m[2].includes('🟢')) ok.add(m[1]);
+    }
+    return ok;
+}
+
+/**
+ * What the iptv-org/epg grabber should fetch: one entry per published channel that no ready-made
+ * feed covers (`covered`), on the working site that covers the most such channels (greedy), so the
+ * grab is as small as it can be and a channel is never scraped twice.
+ *
+ * @returns {{site: string, site_id: string, lang: string, xmltv_id: string, name: string}[]}
+ */
+export function grabPlan(guides, published, covered, okSites) {
+    const bySite = new Map();
+    for (const g of guides) {
+        if (!g.channel || !published.has(g.channel) || covered.has(g.channel) || !okSites.has(g.site)) continue;
+        if (!bySite.has(g.site)) bySite.set(g.site, new Map());
+        const site = bySite.get(g.site);
+        if (!site.has(g.channel)) site.set(g.channel, g);
+    }
+    const plan = [];
+    const taken = new Set();
+    for (;;) {
+        let best = null;
+        let gain = 0;
+        for (const [site, chans] of bySite) {
+            let n = 0;
+            for (const id of chans.keys()) if (!taken.has(id)) n += 1;
+            if (n > gain || (n === gain && n > 0 && site < best)) { best = site; gain = n; }
+        }
+        if (!best) return plan;
+        for (const [id, g] of bySite.get(best)) {
+            if (taken.has(id)) continue;
+            taken.add(id);
+            plan.push({ site: g.site, site_id: g.site_id, lang: g.lang || 'en', xmltv_id: id, name: g.site_name || id });
+        }
+        bySite.delete(best);
+    }
+}
+
+/** The grabber's channel list for `plan`. */
+export function channelsXml(plan) {
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    const rows = plan.map(p => `  <channel site="${esc(p.site)}" lang="${esc(p.lang)}" xmltv_id="${esc(p.xmltv_id)}" site_id="${esc(p.site_id)}">${esc(p.name)}</channel>`);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<channels>\n${rows.join('\n')}\n</channels>\n`;
+}

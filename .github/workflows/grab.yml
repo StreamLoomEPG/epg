@@ -1,0 +1,55 @@
+name: Grab guide
+
+# Scrapes, with iptv-org/epg's grabber, only the published channels no ready-made feed carries
+# (plan-grab.mjs), once a day: the sites list two or more days ahead, and the guide build reads the
+# result as one more source, with the same due times and ETags. Published as a release asset so the
+# build fetches it like any other feed. Runs before the 05:47 build.
+on:
+  schedule:
+    - cron: "13 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grab
+  cancel-in-progress: false
+
+jobs:
+  grab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Plan the grab
+        run: node plan-grab.mjs
+
+      - name: Fetch the grabber
+        run: |
+          git clone --depth 1 https://github.com/iptv-org/epg grabber
+          cd grabber && npm ci --no-audit --no-fund
+
+      # Eight connections spread over ~100 sites, with a delay: the sample measured ~8 s a request, so
+      # ~2,700 requests (1,344 channels x 2 days) take about 45 minutes. Once a day.
+      - name: Grab
+        working-directory: grabber
+        run: npm run grab --- --channels=../grab/channels.xml --output=../grab/guide.xml --days=2 --maxConnections=8 --delay=250 --gzip
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view grab >/dev/null 2>&1 || gh release create grab --title "Grabbed guide" --notes "Daily output of grab.yml; read by build.mjs." --latest=false
+          gh release upload grab grab/guide.xml.gz --clobber
+
+      - name: Keep the schedule enabled
+        if: ${{ !cancelled() }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/grab.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}
