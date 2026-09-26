@@ -1,1 +1,76 @@
-bmFtZTogR3JhYiBndWlkZQoKIyBTY3JhcGVzLCB3aXRoIGlwdHYtb3JnL2VwZydzIGdyYWJiZXIsIG9ubHkgdGhlIHB1Ymxpc2hlZCBjaGFubmVscyBubyByZWFkeS1tYWRlIGZlZWQgY2FycmllcyAocGxhbi1ncmFiLm1qcyksIG9uY2UgYSBkYXk6IHRoZSBzaXRlcyBsaXN0IHR3byBvciBtb3JlIGRheXMgYWhlYWQsIGFuZCB0aGUgZ3VpZGUgYnVpbGQgcmVhZHMgdGhlCiMgcmVzdWx0IGFzIG9uZSBtb3JlIHNvdXJjZSwgd2l0aCB0aGUgc2FtZSBkdWUgdGltZXMgYW5kIEVUYWdzLiBSdW5zIGJlZm9yZSB0aGUgMDU6NDcgYnVpbGQuCm9uOgogIHNjaGVkdWxlOgogICAgLSBjcm9uOiAiMTMgMyAqICogKiIKICB3b3JrZmxvd19kaXNwYXRjaDoKCnBlcm1pc3Npb25zOgogIGNvbnRlbnRzOiB3cml0ZQogIGFjdGlvbnM6IHdyaXRlCgpjb25jdXJyZW5jeToKICBncm91cDogZ3JhYgogIGNhbmNlbC1pbi1wcm9ncmVzczogZmFsc2UKCmpvYnM6CiAgZ3JhYjoKICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKICAgIHRpbWVvdXQtbWludXRlczogMjQwCiAgICBzdGVwczoKICAgICAgLSB1c2VzOiBhY3Rpb25zL2NoZWNrb3V0QHY0CgogICAgICAtIHVzZXM6IGFjdGlvbnMvc2V0dXAtbm9kZUB2NAogICAgICAgIHdpdGg6CiAgICAgICAgICBub2RlLXZlcnNpb246ICIyMi54IgoKICAgICAgLSBuYW1lOiBQbGFuIHRoZSBncmFiCiAgICAgICAgcnVuOiBub2RlIHBsYW4tZ3JhYi5tanMKCiAgICAgIC0gbmFtZTogQ2xvbmUgdGhlIGdyYWJiZXIKICAgICAgICBydW46IGdpdCBjbG9uZSAtLWRlcHRoIDEgaHR0cHM6Ly9naXRodWIuY29tL2lwdHYtb3JnL2VwZyBncmFiYmVyCgogICAgICAtIGlkOiBjYWNoZQogICAgICAgIHVzZXM6IGFjdGlvbnMvY2FjaGVAdjQKICAgICAgICB3aXRoOgogICAgICAgICAgcGF0aDogZ3JhYmJlci9ub2RlX21vZHVsZXMKICAgICAgICAgIGtleTogZ3JhYmJlci1ub2RlLW1vZHVsZXMtJHt7IGhhc2hGaWxlcygnZ3JhYmJlci9wYWNrYWdlLWxvY2suanNvbicpIH19CgogICAgICAjIFRoZSBncmFiYmVyJ3MgbG9ja2ZpbGUgY2hhbmdlcyByYXJlbHk7IGEgY2FjaGUgaGl0IHNraXBzIHJlaW5zdGFsbGluZyB+NzAKICAgICAgIyBwYWNrYWdlcyBmcm9tIHNjcmF0Y2ggZXZlcnkgZGF5LgogICAgICAtIG5hbWU6IEluc3RhbGwgdGhlIGdyYWJiZXIKICAgICAgICBpZjogc3RlcHMuY2FjaGUub3V0cHV0cy5jYWNoZS1oaXQgIT0gJ3RydWUnCiAgICAgICAgd29ya2luZy1kaXJlY3Rvcnk6IGdyYWJiZXIKICAgICAgICBydW46IG5wbSBjaSAtLW5vLWF1ZGl0IC0tbm8tZnVuZAoKICAgICAgIyBPbmUgcHJvY2VzcyBwZXIgc2l0ZSwgZm91ciBhdCBhIHRpbWUsIGVhY2ggY2FwcGVkIGluIG1lbW9yeSBhbmQgdGltZTogcnVuIGFzIG9uZSBwcm9jZXNzIHRoZQogICAgICAjIGdyYWJiZXIgcmFuIG91dCBvZiBpdHMgNCBHQiBoZWFwIHdpdGhpbiBhIG1pbnV0ZSwgYW5kIG9uZSBiYWQgc2l0ZSB0b29rIGV2ZXJ5IGNoYW5uZWwgd2l0aCBpdC4gQSBzaXRlIHRoYXQgZmFpbHMgY29zdHMgb25seSBpdHMgb3duIGNoYW5uZWxzIGFuZCBpcyByZXBvcnRlZC4gRmV3IGNvbm5lY3Rpb25zIHBlciBzaXRlIGFuZAogICAgICAjIGEgZGVsYXk6IHRoaXMgaXMgc29tZW9uZSBlbHNlJ3Mgc2VydmVyLCBhc2tlZCBvbmNlIGEgZGF5LgogICAgICAtIG5hbWU6IEdyYWIKICAgICAgICB3b3JraW5nLWRpcmVjdG9yeTogZ3JhYmJlcgogICAgICAgIGVudjoKICAgICAgICAgIE5PREVfT1BUSU9OUzogLS1tYXgtb2xkLXNwYWNlLXNpemU9MzA3MgogICAgICAgIHJ1bjogfAogICAgICAgICAgbWtkaXIgLXAgLi4vZ3JhYi9vdXQKICAgICAgICAgIGxzIC4uL2dyYWIvc2l0ZXMvKi5jaGFubmVscy54bWwgfCB4YXJncyAtUCA0IC1Je30gc2ggLWMgJwogICAgICAgICAgICBzaXRlPSQoYmFzZW5hbWUge30gLmNoYW5uZWxzLnhtbCkKICAgICAgICAgICAgdGltZW91dCAyMG0gbnBtIHJ1biAtLXNpbGVudCBncmFiIC0tLSAtLWNoYW5uZWxzPXt9IC0tb3V0cHV0PS4uL2dyYWIvb3V0LyRzaXRlLnhtbCAtLWRheXM9MiAtLW1heENvbm5lY3Rpb25zPTIgLS1kZWxheT0yNTAgPiAuLi9ncmFiL291dC8kc2l0ZS5sb2cgMj4mMSBcCiAgICAgICAgICAgICAgfHwgeyBlY2hvICI6Ondhcm5pbmc6OiRzaXRlIGZhaWxlZDogJCh0YWlsIC1uIDMgLi4vZ3JhYi9vdXQvJHNpdGUubG9nIHwgdHIgIlxuIiAiICIpIjsgcm0gLWYgLi4vZ3JhYi9vdXQvJHNpdGUueG1sOyB9JwogICAgICAgICAgY2QgLi4gJiYgbm9kZSBtZXJnZS1ncmFiLm1qcwoKICAgICAgLSBuYW1lOiBQdWJsaXNoCiAgICAgICAgZW52OgogICAgICAgICAgR0hfVE9LRU46ICR7eyBnaXRodWIudG9rZW4gfX0KICAgICAgICBydW46IHwKICAgICAgICAgIGdoIHJlbGVhc2UgdmlldyBncmFiID4vZGV2L251bGwgMj4mMSB8fCBnaCByZWxlYXNlIGNyZWF0ZSBncmFiIC0tdGl0bGUgIkdyYWJiZWQgZ3VpZGUiIC0tbm90ZXMgIkRhaWx5IG91dHB1dCBvZiBncmFiLnltbDsgcmVhZCBieSBidWlsZC5tanMuIiAtLWxhdGVzdD1mYWxzZQogICAgICAgICAgZ2ggcmVsZWFzZSB1cGxvYWQgZ3JhYiBncmFiL2d1aWRlLnhtbC5neiAtLWNsb2JiZXIKCiAgICAgIC0gbmFtZTogS2VlcCB0aGUgc2NoZWR1bGUgZW5hYmxlZAogICAgICAgIGlmOiAkeyEgY2FuY2VsbGVkKCkgfX0KICAgICAgICBydW46IGdoIGFwaSAtWCBQVVQgInJlcG9zLyR7eyBnaXRodWIucmVwb3NpdG9yeSB9fS9hY3Rpb25zL3dvcmtmbG93cy9ncmFiLnltbC9lbmFibGUiCiAgICAgICAgZW52OgogICAgICAgICAgR0hfVE9LRU46ICR7eyBnaXRodWIudG9rZW4gfX0K
+name: Grab guide
+
+# Scrapes, with iptv-org/epg's grabber, only the published channels no ready-made feed carries
+# (plan-grab.mjs), once a day: the sites list two or more days ahead, and the guide build reads the
+# result as one more source, with the same due times and ETags. Runs before the 05:47 build.
+on:
+  schedule:
+    - cron: "13 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: grab
+  cancel-in-progress: false
+
+jobs:
+  grab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Plan the grab
+        run: node plan-grab.mjs
+
+      - name: Clone the grabber
+        run: git clone --depth 1 https://github.com/iptv-org/epg grabber
+
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: grabber/node_modules
+          key: grabber-node-modules-${{ hashFiles('grabber/package-lock.json') }}
+
+      # The grabber's lockfile changes rarely; a cache hit skips reinstalling ~70
+      # packages from scratch every day.
+      - name: Install the grabber
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: grabber
+        run: npm ci --no-audit --no-fund
+
+      # One process per site, four at a time, each capped in memory and time: run as one process the
+      # grabber ran out of its 4 GB heap within a minute, and one bad site took every channel with it.
+      # A site that fails costs only its own channels and is reported. Few connections per site and
+      # a delay: this is someone else's server, asked once a day.
+      - name: Grab
+        working-directory: grabber
+        env:
+          NODE_OPTIONS: --max-old-space-size=3072
+        run: |
+          mkdir -p ../grab/out
+          ls ../grab/sites/*.channels.xml | xargs -P 4 -I{} sh -c '
+            site=$(basename {} .channels.xml)
+            timeout 20m npm run --silent grab --- --channels={} --output=../grab/out/$site.xml --days=2 --maxConnections=2 --delay=250 > ../grab/out/$site.log 2>&1 \
+              || { echo "::warning::$site failed: $(tail -n 3 ../grab/out/$site.log | tr "\n" " ")"; rm -f ../grab/out/$site.xml; }'
+          cd .. && node merge-grab.mjs
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view grab >/dev/null 2>&1 || gh release create grab --title "Grabbed guide" --notes "Daily output of grab.yml; read by build.mjs." --latest=false
+          gh release upload grab grab/guide.xml.gz --clobber
+
+      - name: Keep the schedule enabled
+        if: ${{ !cancelled() }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/grab.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}
