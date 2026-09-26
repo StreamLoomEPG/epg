@@ -2,8 +2,7 @@ name: Grab guide
 
 # Scrapes, with iptv-org/epg's grabber, only the published channels no ready-made feed carries
 # (plan-grab.mjs), once a day: the sites list two or more days ahead, and the guide build reads the
-# result as one more source, with the same due times and ETags. Published as a release asset so the
-# build fetches it like any other feed. Runs before the 05:47 build.
+# result as one more source, with the same due times and ETags. Runs before the 05:47 build.
 on:
   schedule:
     - cron: "13 3 * * *"
@@ -31,10 +30,21 @@ jobs:
       - name: Plan the grab
         run: node plan-grab.mjs
 
-      - name: Fetch the grabber
-        run: |
-          git clone --depth 1 https://github.com/iptv-org/epg grabber
-          cd grabber && npm ci --no-audit --no-fund
+      - name: Clone the grabber
+        run: git clone --depth 1 https://github.com/iptv-org/epg grabber
+
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: grabber/node_modules
+          key: grabber-node-modules-${{ hashFiles('grabber/package-lock.json') }}
+
+      # The grabber's lockfile changes rarely; a cache hit skips reinstalling ~70
+      # packages from scratch every day.
+      - name: Install the grabber
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: grabber
+        run: npm ci --no-audit --no-fund
 
       # One process per site, four at a time, each capped in memory and time: run as one process the
       # grabber ran out of its 4 GB heap within a minute, and one bad site took every channel with it.
