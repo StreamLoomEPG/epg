@@ -46,17 +46,21 @@ jobs:
         working-directory: grabber
         run: npm ci --no-audit --no-fund
 
-      # One process per site, four at a time, each capped in memory and time: run as one process the
+      # One process per site, two at a time, each capped in memory and time: run as one process the
       # grabber ran out of its 4 GB heap within a minute, and one bad site took every channel with it.
-      # A site that fails costs only its own channels and is reported. Few connections per site and
-      # a delay: this is someone else's server, asked once a day.
+      # A site that fails costs only its own channels and is reported. The runner has 16 GB; two
+      # processes at 6 GB each leaves headroom while giving the largest sites (170+ channels) enough
+      # heap to finish instead of hitting the ceiling — at 4-way parallelism and 3 GB each, the two
+      # biggest sites (epg.iptvx.one, tv.mail.ru) OOM'd every single run. The job has minutes to spare
+      # against its 240m budget, so halving parallelism costs nothing that matters. Few connections
+      # per site and a delay: this is someone else's server, asked once a day.
       - name: Grab
         working-directory: grabber
         env:
-          NODE_OPTIONS: --max-old-space-size=3072
+          NODE_OPTIONS: --max-old-space-size=6144
         run: |
           mkdir -p ../grab/out
-          ls ../grab/sites/*.channels.xml | xargs -P 4 -I{} sh -c '
+          ls ../grab/sites/*.channels.xml | xargs -P 2 -I{} sh -c '
             site=$(basename {} .channels.xml)
             timeout 20m npm run --silent grab --- --channels={} --output=../grab/out/$site.xml --days=2 --maxConnections=2 --delay=250 > ../grab/out/$site.log 2>&1 \
               || { echo "::warning::$site failed: $(tail -n 3 ../grab/out/$site.log | tr "\n" " ")"; rm -f ../grab/out/$site.xml; }'
